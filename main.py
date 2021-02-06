@@ -9,6 +9,8 @@ from PIL import Image
 # Пусть наше приложение предполагает запуск:
 # python search.py Москва, ул. Ак. Королева, 12
 # Тогда запрос к геокодеру формируется следующим образом:
+from utils import get_spn
+
 toponym_to_find = " ".join(sys.argv[1:])
 
 geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
