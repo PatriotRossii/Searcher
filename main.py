@@ -5,11 +5,10 @@ from io import BytesIO
 import requests
 from PIL import Image
 
-
 # Пусть наше приложение предполагает запуск:
 # python search.py Москва, ул. Ак. Королева, 12
 # Тогда запрос к геокодеру формируется следующим образом:
-from utils import get_spn
+from utils import get_spn, distance_between_points
 
 toponym_to_find = " ".join(sys.argv[1:])
 
@@ -36,15 +35,17 @@ toponym_coodrinates = toponym["Point"]["pos"]
 # Долгота и широта:
 toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
 
-
 response = requests.get(
-    "https://search-maps.yandex.ru/v1/?apikey=5cd985b0-e0e1-4c0e-acae-da6b86a27926&geocode=аптека&ll="
-    f"{toponym_coodrinates.replace(' ', ',')}&type=geo&results=1&format=json"
+    "https://search-maps.yandex.ru/v1/?apikey=5cd985b0-e0e1-4c0e-acae-da6b86a27926&text=аптека&ll="
+    f"{toponym_coodrinates.replace(' ', ',')}&results=500&spn={','.join([*get_spn(toponym)])}&"
+    f"type=biz&lang=ru&format=json"
 )
-data = response.json()["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
-toponym_coodrinates = data["Point"]["pos"]
-toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
-
+data = response.json()["features"]
+objects = [(distance_between_points((float(toponym_longitude), float(toponym_lattitude)),
+                                    e["geometry"]["coordinates"]),
+            e["properties"]) for e in data]
+for e in sorted(objects, key=lambda e: e[0]):
+    print(e)
 
 # Собираем параметры для запроса к StaticMapsAPI:
 map_params = {
