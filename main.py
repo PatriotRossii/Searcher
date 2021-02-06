@@ -9,6 +9,8 @@ from PIL import Image
 # Пусть наше приложение предполагает запуск:
 # python search.py Москва, ул. Ак. Королева, 12
 # Тогда запрос к геокодеру формируется следующим образом:
+from utils import get_spn
+
 toponym_to_find = " ".join(sys.argv[1:])
 
 geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
@@ -34,10 +36,20 @@ toponym_coodrinates = toponym["Point"]["pos"]
 # Долгота и широта:
 toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
 
+
+response = requests.get(
+    "https://search-maps.yandex.ru/v1/?apikey=5cd985b0-e0e1-4c0e-acae-da6b86a27926&geocode=аптека&ll="
+    f"{toponym_coodrinates.replace(' ', ',')}&type=geo&results=1&format=json"
+)
+data = response.json()["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+toponym_coodrinates = data["Point"]["pos"]
+toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
+
+
 # Собираем параметры для запроса к StaticMapsAPI:
 map_params = {
     "ll": ",".join([toponym_longitude, toponym_lattitude]),
-    "spn": ",".join([*get_spn(toponym)]),
+    "spn": ",".join([*get_spn(data)]),
     "l": "map",
     "pt": toponym_coodrinates.replace(" ", ",") + ",pm2rdm"
 }
